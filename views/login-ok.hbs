@@ -1,0 +1,195 @@
+<style>
+    .table td, .table th { vertical-align: middle; } .welcome h1 { color:
+    #1d7438; } .welcome .jumbotron { background-color: #caf1d4; display: flex;
+    justify-content: space-between; align-items: center; padding: 0 32px; } h1 {
+    color: blue; } hr { background-color: #ddd; } p { margin: 0; } .chat { gap:
+    10px; align-items: center; } .chat strong { color: blue; } .chat p { color:
+    #e00909; } .chat em { color: #28a745; } .avatar { width: 40px; height: 40px;
+    border-radius: 50%; }
+</style>
+
+<div class="container text-center my-3 welcome">
+    <div class="jumbotron" style="color: white;">
+        <h1>Bienvenido {{usuario}}</h1>
+        <img src={{photo}} alt="" />
+        <p>{{email}}</p>
+        <button
+            class="btn btn-warning my-5"
+            onclick="logout()"
+        >Desloguear</button>
+    </div>
+</div>
+
+<div class="container mt-3">
+    <div class="jumbotron">
+        <h1>Ingrese Producto</h1>
+        <form id="form">
+            <div class="mb-3">
+                <label for="title" class="form-label">Nombre</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    name="title"
+                    id="title"
+                    aria-describedby="emailHelp"
+                />
+            </div>
+            <div class="mb-3">
+                <label for="price" class="form-label">Precio</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    name="price"
+                    id="price"
+                    aria-describedby="emailHelp"
+                />
+            </div>
+            <div class="mb-3">
+                <label for="thumbnail" class="form-label">
+                    Foto URL
+                </label>
+                <input
+                    type="text"
+                    class="form-control"
+                    name="thumbnail"
+                    id="thumbnail"
+                    aria-describedby="emailHelp"
+                />
+            </div>
+            <button type="submit" class="btn btn-success">
+                Enviar
+            </button>
+        </form>
+    </div>
+
+    <div id="action"></div>
+
+    <div class="jumbotron">
+        <h1>Centro de mensajes</h1>
+        <h1 id="compresion"></h1>
+
+        <form id="formMessage">
+            <div class="my-3 row">
+                <div class="col-6">
+                    <input
+                        type="email"
+                        class="form-control"
+                        name="id"
+                        placeholder="email"
+                    />
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <div class="col-6">
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="nombre"
+                        placeholder="nombre"
+                    />
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <div class="col-6">
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="apellido"
+                        placeholder="apellido"
+                    />
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <div class="col-6">
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="edad"
+                        placeholder="edad"
+                    />
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <div class="col-6">
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="alias"
+                        placeholder="alias"
+                    />
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <div class="col-6">
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="avatar"
+                        placeholder="avatar"
+                    />
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <div class="col-6 d-flex">
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="text"
+                        placeholder="text"
+                    />
+                    <button type="submit" class="btn btn-success">
+                        Enviar
+                    </button>
+                </div>
+            </div>
+        </form>
+        <div class="mb-3" id="message"></div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script
+    src="https://cdn.jsdelivr.net/npm/normalizr@3.6.1/dist/normalizr.browser.min.js"
+></script>
+<script>
+    const socket = io(); const action = document.getElementById("action"); const
+    compresion = document.getElementById("compresion"); const message =
+    document.getElementById("message"); const title =
+    document.getElementById("title"); const login =
+    document.getElementById("login"); const price =
+    document.getElementById("price"); const thumbnail =
+    document.getElementById("thumbnail"); const form =
+    document.getElementById("form"); const formMessage =
+    document.getElementById("formMessage"); const schema = normalizr.schema;
+    function redireccionar(pagina) { location.href = pagina; } function logout()
+    { console.log('logout'); redireccionar('/logout') }
+    form.addEventListener("submit", function (e) { e.preventDefault(); const
+    data = { title: form[0].value, price: form[1].value, thumbnail:
+    form[2].value, }; fetch("/api/productos/guardar", { headers: {
+    "Content-Type": "application/json", }, method: "post", body:
+    JSON.stringify(data), }) .then((res) => res.json()) .then((data) => {
+    form.reset(); socket.emit("update", "ok"); }) .catch((e) =>
+    console.log("error", e)); }); formMessage.addEventListener("submit",
+    function (e) { e.preventDefault(); const data = { author: { id:
+    formMessage[0].value, nombre: formMessage[1].value, apellido:
+    formMessage[2].value, edad: formMessage[3].value, alias:
+    formMessage[4].value, avatar: formMessage[5].value, }, text:
+    formMessage[6].value, }; formMessage.reset(); if (data.author) {
+    socket.emit("nuevo-mensaje", data); } }); socket.on("productos", function
+    (productos) { action.innerHTML = dataTable(productos); });
+    socket.on("mensajes", (data) => { console.log("Normalizado: ", data); const
+    schemaAuthor = new schema.Entity( "author", {}, { idAttribute: "id" } );
+    const schemaMensaje = new schema.Entity( "post", { author: schemaAuthor }, {
+    idAttribute: "_id" } ); const schemaMensajes = new schema.Entity( "posts", {
+    mensajes: [schemaMensaje] }, { idAttribute: "id" } ); const denormalize =
+    normalizr.denormalize( data.result, schemaMensajes, data.entities );
+    console.log("Desnormalizado: ", denormalize); const porcentaje = 100 -
+    (JSON.stringify(denormalize).length * 100) / JSON.stringify(data).length;
+    console.log(porcentaje); message.innerHTML = render(denormalize.mensajes);
+    compresion.innerHTML = `(Compresión: ${porcentaje.toFixed()}%)`; }); const
+    render = (data) => { let template = ""; if (data.length) { template += data
+    .map((elem, index) => { return `<div class="d-flex chat">
+    <strong>${elem.author.id}</strong> <p>${elem.author.alias}</p>
+    <em>${elem.text}</em> <img class="avatar" src="${elem.author.avatar}"/>
+    </div> `; }) .join(" "); } return template; };
+</script>
