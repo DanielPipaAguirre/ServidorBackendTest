@@ -3,12 +3,12 @@ const exphbs = require("express-handlebars");
 const passport = require("passport");
 const nodemailer = require("nodemailer");
 const FacebookStrategy = require("passport-facebook").Strategy;
-const routes = require("./routes");
+const routes = require("./routes/routes");
 const dotenv = require("dotenv");
-const chat = require("./api/chat");
+const chat = require("./controllers/chat");
 const normalizr = require("normalizr");
 const config = require("./config/config.json");
-const controllersdb = require("./api/users");
+const controllersdb = require("./controllers/users");
 
 const app = express();
 const http = require("http");
@@ -46,7 +46,7 @@ passport.use(
                 from: "Servidor Node.js",
                 to: "myron.strosin30@ethereal.email",
                 subject: `LOGIN ${userProfile.displayName} ${date}`,
-                html: '<h1 style="color: blue;">Usuario Logueado</h1>',
+                html: '<h1 style="color: blue;"></h1>',
                 attachments: [
                     {
                         path: userProfile.photos[0].value,
